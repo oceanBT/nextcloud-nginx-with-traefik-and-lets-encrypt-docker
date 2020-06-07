@@ -19,7 +19,10 @@ services:
     container_name: "traefik"
     command:
       - "--log.level=INFO"
-      - "--api.insecure=true"
+      # prevent auto created traefik endpoint
+      - "--api.insecure=false"
+      # enable or disable dashboard on traefik.yourdomain.com
+      - "--api.dashboard=false"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
