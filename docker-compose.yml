@@ -1,0 +1,133 @@
+version: '3'
+services:
+  db:
+    image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - ./nextcloud_volumes/db_data:/var/lib/mysql
+      - ./nextcloud_volumes/db_config:/etc/mysql/mariadb.conf.d
+    env_file:
+      - .env
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+  traefik:
+    image: "traefik"
+    container_name: "traefik"
+    command:
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # forward port 80 -> 443
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # cert resolver config
+      - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=${TRAEFIK_DOMAIN_REGISTRAR_CODE}"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.delayBeforeCheck=100"
+      # dns server from domain registrar, for faster lets encrypt DNS lookup 
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=${TRAEFIK_DOMAIN_REGISTRAR_DNS},1.1.1.1:53,8.8.8.8:53"
+      - "--certificatesresolvers.myresolver.acme.email=${TRAEFIK_LE_CERT_MAILADRDRESS}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      # wildcard certificate
+      - "--entrypoints.websecure.http.tls.certResolver=myresolver"
+      - "--entrypoints.websecure.http.tls.domains[0].main=${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}"
+      - "--entrypoints.websecure.http.tls.domains[0].sans=*.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}"
+      # optional second tls cert  domain
+      #- "--entrypoints.websecure.http.tls.domains[1].main=example.de"
+      #- "--entrypoints.websecure.http.tls.domains[1].sans=*.example.de"
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      #- ./traefik_data/traefik.yml:/etc/traefik/traefik.yml:ro #no separate config needed at this time
+      - ./nextcloud_volumes/traefik_data/acme.json:/letsencrypt/acme.json
+    labels:
+      # yes, bitte traefik fuer diesen container nutzen
+      - "traefik.enable=true"
+      # access over entrypoint websecure
+      - "traefik.http.routers.traefik-sregistraecure.entrypoints=websecure"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}`)"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=myresolver"
+      #- bereits oben global am websecure entrypoint registiert, daher hier unnötig
+      #- "traefik.http.routers.traefik-secure.tls.domains[0].main=${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}"
+      #- "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}"
+      # traefik Weboberläche unter dieser route verfügbar machen
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+  nextcloud:
+    #image: nextcloud:fpm-alpine  
+    # we need some extra packages and include cron run with supervisor
+    build: ./dockerfiles/nextcloud
+    restart: always
+    volumes:
+      - ./nextcloud_volumes/nextcloud_data:/var/www/html/data
+      - ./nextcloud_volumes/www_data:/var/www/html
+    environment:
+      - MYSQL_HOST=db
+      - REDIS_HOST=redis
+      - TRUSTED_PROXIES=172.0.0.0/8
+      - OVERWRITEHOST=nextcloud.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}
+      - OVERWRITEPROTOCOL=https
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+  nginx: #nginx
+    build:  ./dockerfiles/web
+    restart: always
+    volumes:
+      - ./nextcloud_volumes/www_data:/var/www/html:ro
+    depends_on:
+      - nextcloud
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}`)"
+      # access over entrypoint websecure
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud.tls=true"
+      - "traefik.http.routers.nextcloud.tls.certresolver=myresolver"
+      # activate middlewares
+      - "traefik.http.routers.nextcloud.middlewares=nextcloud_headers,nextcloud_dav"
+      # header middleware
+      - "traefik.http.middlewares.nextcloud_headers.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.nextcloud_headers.headers.framedeny=true"
+      - "traefik.http.middlewares.nextcloud_headers.headers.sslRedirect=true"
+      - "traefik.http.middlewares.nextcloud_headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.nextcloud_headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.nextcloud_headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.nextcloud_headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.nextcloud_headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.nextcloud_headers.headers.stsSeconds=15552001"
+      # Reverse-Proxy "Traefik" Redirects für CalDAV / CardDAV nach offizieller nextcloud docu
+      - "traefik.http.middlewares.nextcloud_dav.redirectregex.permanent=true"
+      - "traefik.http.middlewares.nextcloud_dav.redirectregex.regex=/.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.nextcloud_dav.redirectregex.replacement=/remote.php/dav/"
+
+#  crons.sh will run in app via supervisor
+#  cron:
+#    image: nextcloud:fpm-alpine
+#    restart: always
+#    volumes:
+#      - nextcloud:/var/www/html
+#    entrypoint: /cron.sh
+#    depends_on:
+#      - db
+#      - redis
+
