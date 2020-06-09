@@ -73,9 +73,7 @@ services:
       - "traefik.http.routers.traefik-secure.service=api@internal"
 
   nextcloud:
-    #image: nextcloud:fpm-alpine  
-    # we need some extra packages and include cron run with supervisor
-    build: ./dockerfiles/nextcloud
+    image:  oceanbt/nextcloud-with-supervisor:latest
     restart: always
     volumes:
       - ./nextcloud_volumes/nextcloud_data:/var/www/html/data
@@ -93,7 +91,7 @@ services:
       - redis
 
   nginx: #nginx
-    build:  ./dockerfiles/web
+    image: oceanbt/nextcloud-nginx:latest
     restart: always
     volumes:
       - ./nextcloud_volumes/www_data:/var/www/html:ro
