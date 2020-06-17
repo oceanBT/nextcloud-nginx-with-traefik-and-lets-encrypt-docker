@@ -1,2 +1,5 @@
 /.env
-/nextcloud_volumes/*
+/nextcloud_volumes/db_data/*
+/nextcloud_volumes/traefik_data/*
+/nextcloud_volumes/nextcloud_data/*
+/nextcloud_volumes/www_data/*
