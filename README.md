@@ -1,6 +1,6 @@
 # nextcloud-nginx-with-traefik-and-lets-encrypt-docker
 Simple docker-compose deployment for nextcloud setup. Including Trafik reverse proxy with automated lets encrypt and nginx webserver.
-All you need is a domain at [on of these registrars](https://docs.traefik.io/v2.2/https/acme/#dnschallenge).
+All you need is a domain at [one of these registrars](https://docs.traefik.io/v2.2/https/acme/#dnschallenge).
 
 # Usage
 
