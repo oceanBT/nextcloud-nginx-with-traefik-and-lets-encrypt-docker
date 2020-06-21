@@ -15,4 +15,4 @@ All you need is a domain at [one of these registrars](https://docs.traefik.io/v2
 
 # Auto update workflow 
 
-![Update workflow](update%20workflow.png | width=100)
+![Update workflow](update%20workflow.png)
