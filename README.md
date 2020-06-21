@@ -11,3 +11,8 @@ All you need is a domain at [one of these registrars](https://docs.traefik.io/v2
 * edit .env (replace all REPLACE_ME values)
 * ```docker-compose up ``` (the first run takes a few minutes to create the certificate.)
 * open `nextcloud.YOURDOMAIN.com`
+
+
+# Auto update workflow 
+
+![Update workflow](update workflow.png)
