@@ -58,7 +58,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./nextcloud_volumes/traefik_data:/letsencrypt
     labels:
-      # yes, bitte traefik fuer diesen container nutzen
       - "traefik.enable=true"
       # access over entrypoint websecure
       - "traefik.http.routers.traefik-sregistraecure.entrypoints=websecure"
