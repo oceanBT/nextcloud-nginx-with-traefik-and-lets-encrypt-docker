@@ -50,7 +50,7 @@ services:
       - "443:443"
     env_file:
       - .env
-    restart: unless-stopped
+    restart: always
     security_opt:
       - no-new-privileges:true
     volumes:
@@ -134,6 +134,7 @@ services:
 #      - redis
   watchtower:
     image: containrrr/watchtower
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     env_file:
