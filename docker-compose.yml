@@ -1,7 +1,7 @@
 version: "2"
 services:
   db:
-    image: mariadb
+    image: mariadb:${MARIA_DB_VERSION}
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     restart: always
     volumes:
@@ -9,7 +9,8 @@ services:
       - ./nextcloud_volumes/db_config:/etc/mysql/mariadb.conf.d
     env_file:
       - .env
-
+    #ports:
+    #  - 3306:3306
   redis:
     image: redis:alpine
     restart: always
@@ -70,9 +71,10 @@ services:
       #- "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}"
       # traefik Weboberläche unter dieser route verfügbar machen
       - "traefik.http.routers.traefik-secure.service=api@internal"
-
+    networks:
+      - traefik
   nextcloud:
-    image:  oceanbt/nextcloud-with-supervisor:latest
+    image: oceanbt/nextcloud-with-supervisor:${NEXTCLOUD_VERSION}
     restart: always
     volumes:
       - ./nextcloud_volumes/nextcloud_data:/var/www/html/data
@@ -148,3 +150,6 @@ services:
 #    restart: always
 #    ports:
 #     - 8080:80
+networks:
+  traefik:
+    name: traefik
