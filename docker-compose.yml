@@ -71,8 +71,6 @@ services:
       #- "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}"
       # traefik Weboberläche unter dieser route verfügbar machen
       - "traefik.http.routers.traefik-secure.service=api@internal"
-    networks:
-      - traefik
   nextcloud:
     image: oceanbt/nextcloud-with-supervisor:${NEXTCLOUD_VERSION}
     restart: always
@@ -151,5 +149,5 @@ services:
 #    ports:
 #     - 8080:80
 networks:
-  traefik:
+  default:
     name: traefik
