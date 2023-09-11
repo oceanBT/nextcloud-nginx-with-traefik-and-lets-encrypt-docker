@@ -77,6 +77,7 @@ services:
     volumes:
       - ./nextcloud_volumes/nextcloud_data:/var/www/html/data
       - ./nextcloud_volumes/www_data:/var/www/html
+      - ./additional.config.php:/var/www/html/config/additional.config.php:ro
     environment:
       - MYSQL_HOST=db
       - REDIS_HOST=redis
