@@ -84,6 +84,7 @@ services:
       - TRUSTED_PROXIES=172.0.0.0/8
       - OVERWRITEHOST=nextcloud.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}
       - OVERWRITEPROTOCOL=https
+      - OVERWRITEWEBHOST=
     env_file:
       - .env
     depends_on:

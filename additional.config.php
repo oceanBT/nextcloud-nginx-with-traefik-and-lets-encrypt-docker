@@ -4,4 +4,5 @@
 $CONFIG = [
     'skeletondirectory' => '',
     'share_folder' => '/shared_with_me',
+    'overwrite.cli.url' => $_ENV['OVERWRITEPROTOCOL'] . '//' . $_ENV['OVERWRITEHOST'] . $_ENV['OVERWRITEWEBHOST'],
 ];
