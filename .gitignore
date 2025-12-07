@@ -3,3 +3,4 @@
 /nextcloud_volumes/traefik_data/*
 /nextcloud_volumes/nextcloud_data/*
 /nextcloud_volumes/www_data/*
+/nextcloud_volumes/nextcloud_data
