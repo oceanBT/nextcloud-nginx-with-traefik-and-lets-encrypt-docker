@@ -93,9 +93,11 @@ services:
       - traefik
 
   nginx: #nginx
-    image: oceanbt/nextcloud-nginx:latest
+    #image: oceanbt/nextcloud-nginx:latest
+    image: nginx
     restart: always
     volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nextcloud_volumes/www_data:/var/www/html:ro
     depends_on:
       - nextcloud
