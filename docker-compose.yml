@@ -143,6 +143,34 @@ services:
     env_file:
       - .env
 
+  collabora:
+    image: collabora/code
+    container_name: collabora
+    restart: unless-stopped
+    networks:
+      - traefik_proxy  # oder wie dein traefik-Netzwerk heißt
+    # Expose/Ports braucht nur Traefik, daher expose
+    expose:
+      - "9980"
+    cap_add:
+      - MKNOD
+    environment:
+      # Domain(s) von Nextcloud, von denen Collabora Zugriff erlauben soll
+      - domain=nextcloud.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}
+      # Optional: weitere Domains (mit | getrennt) falls du mehrere Nextcloud-Instanzen nutzt
+      # - domain=cloud\\.meinedomain\\.tld|nc2\\.meinedomain\\.tld
+      - "extra_params=--o:ssl.enable=false --o:ssl.termination=true"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.collabora.rule=Host(`office.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}`)"
+      - "traefik.http.routers.collabora.entrypoints=web"
+      - "traefik.http.routers.collabora.middlewares=collabora-https-redirect"
+      - "traefik.http.middlewares.collabora-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.collabora-secure.rule=Host(`office.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}`)"
+      - "traefik.http.routers.collabora-secure.entrypoints=web-secure"
+      - "traefik.http.routers.collabora-secure.tls=true"
+      - "traefik.http.routers.collabora-secure.tls.certresolver=letsencryptresolver"
 #  phpmyadmin:
 #    image: phpmyadmin
 #    container_name: phpmyadmin
