@@ -145,10 +145,9 @@ services:
 
   collabora:
     image: collabora/code
-    container_name: collabora
     restart: unless-stopped
     networks:
-      - traefik_proxy  # oder wie dein traefik-Netzwerk heißt
+      - traefik  # oder wie dein traefik-Netzwerk heißt
     # Expose/Ports braucht nur Traefik, daher expose
     expose:
       - "9980"
@@ -162,7 +161,7 @@ services:
       - "extra_params=--o:ssl.enable=false --o:ssl.termination=true"
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik_proxy"
+      - "traefik.docker.network=traefik"
       - "traefik.http.routers.collabora.rule=Host(`office.${TRAEFIK_LE_CERT_WILDCARD_DOMAIN_NAME}`)"
       - "traefik.http.routers.collabora.entrypoints=web"
       - "traefik.http.routers.collabora.middlewares=collabora-https-redirect"
